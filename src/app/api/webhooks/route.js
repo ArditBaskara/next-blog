@@ -74,7 +74,7 @@ if (eventType === 'user.created' || eventType === 'user.updated'){
     )
     if (user && eventType === 'user.created'){
       try {
-        await clerkClient.users.updateUserMetadata(id, {
+        await clerkClient.users.updateUser(id, {
           publicMetadata:{
             userMongoId: user._id,
             isAdmin: user.isAdmin,
