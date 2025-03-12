@@ -61,7 +61,7 @@ if (eventType === 'user.created' || eventType === 'user.updated'){
     last_name,
     image_url,
     email_addresses,
-    username,
+    username
   } = evt?.data;
   try {
     const user = await createOrUpdateUser(
@@ -100,5 +100,5 @@ if (eventType === 'user.created' || eventType === 'user.updated'){
       return new Response('Error occured', { status: 400});
     }
   }
-  return new Response('Webhook received', { status: 200 })
+  return new Response('', { status: 200 })
 }
