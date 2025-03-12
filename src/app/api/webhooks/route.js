@@ -1,6 +1,8 @@
 import { Webhook } from 'svix'
 import { headers } from 'next/headers'
-import { WebhookEvent } from '@clerk/nextjs/server'
+import { clerkClient, WebhookEvent } from '@clerk/nextjs/server'
+import { createOrUpdateUser } from '@/lib/actions/user'
+import { connect } from 'http2'
 
 export async function POST(req) {
   const SIGNING_SECRET = process.env.SIGNING_SECRET
@@ -47,10 +49,56 @@ export async function POST(req) {
 
   // Do something with payload
   // For this guide, log payload to console
-  const { id } = evt.data
-  const eventType = evt.type
+  const { id } = evt?.data
+  const eventType = evt?.type
   console.log(`Received webhook with ID ${id} and event type of ${eventType}`)
-  console.log('Webhook payload:', body)
+  console.log('Webhook payload:', body);
 
+if (eventType === 'user.created' || eventType === 'user.updated'){
+  const {
+    id,
+    first_name,
+    last_name,
+    image_url,
+    email_addresses,
+    username,
+  } = evt?.data;
+  try {
+    const user = await createOrUpdateUser(
+      id,
+      first_name,
+      last_name,
+      image_url,
+      email_addresses,
+      username,
+    )
+    if (user && eventType === 'user.created'){
+      try {
+        await clerkClient.users.updateUserMetadata(id, {
+          publicMetadata:{
+            userMongoId: user._id,
+            isAdmin: user.isAdmin,
+          }
+        })
+      } catch (error){
+        console.error('Error: Could not update user metadata:', error);
+      }
+    }
+  }catch(error){
+    console.log('error create or update user: ', error);
+    return new Response('Error occured', { status: 400});
+  }
+}
+
+  if (eventType === 'user.deleted'){
+    const { id } = evt?.data;
+    try {
+      await deleteUser(id);
+      // await User.findOneAndDelete({ clerkId: id });
+    } catch (error) {
+      console.log('error delete user:', error);
+      return new Response('Error occured', { status: 400});
+    }
+  }
   return new Response('Webhook received', { status: 200 })
 }
